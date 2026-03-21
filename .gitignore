@@ -41,5 +41,6 @@ cmake-build-release/
 .DS_Store
 Thumbs.db
 
-# --- PCB 设计相关  ---
+# --- PCB 设计相关 (可选) ---
+# 如果你想保留 PCB 源文件但忽略自动生成的备份/运行日志
 Doc/PCB

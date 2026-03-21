@@ -1,0 +1,60 @@
+//
+// Created by asus on 2026/3/10.
+//
+
+#ifndef PIPEBOT_LEDTYPE_H
+#define PIPEBOT_LEDTYPE_H
+
+
+#include "main.h"
+// #include "bsp_usart_dma.h"
+
+typedef enum {
+    LEDColor_BLUE = 0,
+    LEDColor_RED = 1
+}LEDColor;
+
+typedef enum {
+    LEDState_Off = 0,
+    LEDState_On = 1
+}LEDState;
+
+typedef struct {
+    LEDColor color;
+    LEDState state;
+}LEDMessage;
+
+typedef struct {
+    uint8_t head;       // 0x55
+    uint8_t id;         // 标识位
+    uint8_t len;        // 0x06 (固定)
+    uint8_t data[6];    // 数据位
+    uint8_t checksum;   // 校验位
+    uint8_t tail;       // 0xBB
+    uint8_t reserved;   // 补齐位，凑够12字节对齐
+} ProtocolFrame_t;
+
+typedef struct {
+    float Kp;
+    float Ki;
+    float Kd;
+    float target;       // 目标值（如目标转速）
+    float current;      // 当前值（编码器读到的实际转速）
+    float err;          // 当前误差 e(k)
+    float last_err;     // 上一次误差 e(k-1)
+    float prev_err;     // 上上次误差 e(k-2)
+    float output;       // PID 计算出的增量输出
+} PID_Params_t;
+
+typedef struct {
+    uint8_t buffer[128];
+    uint16_t head; // 写指针
+    uint16_t tail; // 读指针
+} RingBuffer_t;
+
+typedef enum {
+    STATE_IDLE = 0,    // 寻找帧头 0x55
+    STATE_HEADER_OK,   // 已找到头，等待接收后续数据
+} ParseState_t;
+
+#endif //PIPEBOT_LEDTYPE_H
