@@ -1,0 +1,45 @@
+# --- 编译输出 (Build Outputs) ---
+# 忽略 CMake 默认构建目录
+build/
+cmake-build-*/
+out/
+
+# 忽略所有编译生成的二进制文件
+*.elf
+*.bin
+*.hex
+*.map
+*.o
+*.obj
+*.srec
+*.list
+
+# --- CLion & JetBrains IDE ---
+# 忽略 JetBrains 配置文件，但保留部分团队共享配置（可选）
+.idea/
+*.iml
+cmake-build-debug/
+cmake-build-release/
+
+# --- STM32CubeMX 相关 ---
+# 忽略本地调试器配置
+.mxproject
+# 注意：PipeBot.ioc 必须保留，它是工程的灵魂
+
+# --- 调试器 & 临时文件 ---
+# 忽略 ST-Link / J-Link / DAPLink 产生的临时日志
+*.log
+*.d
+*.crf
+*.dep
+*.axf
+*.htm
+*.lnp
+*.sct
+
+# --- 操作系统临时文件 ---
+.DS_Store
+Thumbs.db
+
+# --- PCB 设计相关  ---
+Doc/PCB
