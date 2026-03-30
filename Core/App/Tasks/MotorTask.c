@@ -20,7 +20,6 @@ void StartMotorTask(void *argument) {
     feedbackFrame.len  = 0x06;
     feedbackFrame.tail = 0xBB;
 
-    // Move_Forward(200);
 
     /* 2. 设定周期 */
     const uint32_t frequency = (uint32_t)(SAMPLE_TIME * 1000.0f);
@@ -34,8 +33,8 @@ void StartMotorTask(void *argument) {
 
         // 读取编码器
         Motor_Read_Encoder();
-        Move_Forward(180);
-        printf("%d,%d\n", MotorL.velocity, MotorR.velocity);
+        // Move_Forward(200);
+        // printf("%d,%d\n", MotorL.velocity, MotorR.velocity);
 
 
 

@@ -89,6 +89,13 @@ const osThreadAttr_t SerialTxTask_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal2,
 };
+/* Definitions for IMUTask */
+osThreadId_t IMUTaskHandle;
+const osThreadAttr_t IMUTask_attributes = {
+  .name = "IMUTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal2,
+};
 /* Definitions for LEDQueue */
 osMessageQueueId_t LEDQueueHandle;
 const osMessageQueueAttr_t LEDQueue_attributes = {
@@ -109,6 +116,11 @@ osSemaphoreId_t Sem_RxCompleteHandle;
 const osSemaphoreAttr_t Sem_RxComplete_attributes = {
   .name = "Sem_RxComplete"
 };
+/* Definitions for Sem_I2C */
+osSemaphoreId_t Sem_I2CHandle;
+const osSemaphoreAttr_t Sem_I2C_attributes = {
+  .name = "Sem_I2C"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -121,6 +133,7 @@ extern void StartKeyTask(void *argument);
 extern void StartMotorTask(void *argument);
 extern void StartSerialRxTask(void *argument);
 extern void StartSerialTxTask(void *argument);
+extern void StartIMUTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -144,6 +157,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Sem_RxComplete */
   Sem_RxCompleteHandle = osSemaphoreNew(1, 1, &Sem_RxComplete_attributes);
+
+  /* creation of Sem_I2C */
+  Sem_I2CHandle = osSemaphoreNew(1, 1, &Sem_I2C_attributes);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
@@ -182,6 +198,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of SerialTxTask */
   SerialTxTaskHandle = osThreadNew(StartSerialTxTask, NULL, &SerialTxTask_attributes);
+
+  /* creation of IMUTask */
+  IMUTaskHandle = osThreadNew(StartIMUTask, NULL, &IMUTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */

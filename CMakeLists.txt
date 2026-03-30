@@ -39,7 +39,9 @@ add_executable(${CMAKE_PROJECT_NAME}
         Core/App/Tasks/MotorTask.c
         Core/Bsp/bsp_usart_dma.c
         Core/App/Tasks/SerialRxTask.c
-        Core/App/Tasks/SerialTxTask.c)
+        Core/App/Tasks/SerialTxTask.c
+        Core/Bsp/bsp_jy61p.c
+        Core/App/Tasks/IMUTask.c)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
