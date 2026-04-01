@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "adc.h"
 #include "dma.h"
 #include "i2c.h"
 #include "tim.h"
@@ -105,6 +106,8 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_I2C1_Init();
+  MX_I2C2_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
   MOTOR_PWM_START();
   MOTOR_ENCODER_START();

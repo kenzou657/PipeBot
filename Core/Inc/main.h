@@ -85,10 +85,18 @@ void Error_Handler(void);
 #define PWMA_GPIO_Port GPIOE
 #define PWMB_Pin GPIO_PIN_14
 #define PWMB_GPIO_Port GPIOE
+#define TOF_SCL_Pin GPIO_PIN_10
+#define TOF_SCL_GPIO_Port GPIOB
+#define TOF_SDA_Pin GPIO_PIN_11
+#define TOF_SDA_GPIO_Port GPIOB
 #define E2A_Pin GPIO_PIN_12
 #define E2A_GPIO_Port GPIOD
 #define E2B_Pin GPIO_PIN_13
 #define E2B_GPIO_Port GPIOD
+#define JY61P_SCL_Pin GPIO_PIN_6
+#define JY61P_SCL_GPIO_Port GPIOB
+#define JY61P_SDA_Pin GPIO_PIN_7
+#define JY61P_SDA_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

@@ -96,6 +96,13 @@ const osThreadAttr_t IMUTask_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityAboveNormal2,
 };
+/* Definitions for TOFTask */
+osThreadId_t TOFTaskHandle;
+const osThreadAttr_t TOFTask_attributes = {
+  .name = "TOFTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal1,
+};
 /* Definitions for LEDQueue */
 osMessageQueueId_t LEDQueueHandle;
 const osMessageQueueAttr_t LEDQueue_attributes = {
@@ -134,6 +141,7 @@ extern void StartMotorTask(void *argument);
 extern void StartSerialRxTask(void *argument);
 extern void StartSerialTxTask(void *argument);
 extern void StartIMUTask(void *argument);
+extern void StartTOFTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -201,6 +209,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of IMUTask */
   IMUTaskHandle = osThreadNew(StartIMUTask, NULL, &IMUTask_attributes);
+
+  /* creation of TOFTask */
+  TOFTaskHandle = osThreadNew(StartTOFTask, NULL, &TOFTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */

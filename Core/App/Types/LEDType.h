@@ -64,4 +64,11 @@ typedef struct {
     float angle[3]; // 角度
 } JY61P_Data_t;
 
+/* 数据结构 */
+typedef struct {
+    uint8_t  i2c_addr;
+    uint16_t distance_mm;
+    uint8_t  is_online;
+} TOF_Sensor_t;
+
 #endif //PIPEBOT_LEDTYPE_H
