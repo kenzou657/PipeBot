@@ -4,12 +4,16 @@
 
 #include "bsp_usart_dma.h"
 
-PID_Params_t MotorL_PID = {4.1f, 0.15f, 0.0f};
-PID_Params_t MotorR_PID = {4.1f, 0.15f, 0.0f};
-RingBuffer_t uart_rx_fifo = {0};
-uint8_t aRxByte = 0;
+#include <string.h>
 
-uint8_t sum_test;
+#include "bsp_motor.h"
+#include "usart.h"
+
+
+
+/* 底层接收缓冲区，大小设为结构体的 2 倍以上防止溢出 */
+uint8_t g_rx_raw_buf[FRAME_SIZE * 2];
+uint16_t g_actual_rx_len = 0;
 
 
 /**
@@ -26,81 +30,90 @@ uint8_t Protocol_Calculate_Checksum(uint8_t *pData, uint16_t len) {
     return sum;
 }
 
-void Serial_Parse_Task(void) {
-    static ParseState_t state = STATE_IDLE;
-    static uint8_t temp_packet[11]; // 临时存放正在组装的帧
-    static uint8_t data_cnt = 0;
+void UART_Rx_Init(void) {
+    HAL_UART_AbortReceive(&huart1);
 
-    // 只要缓冲区里有数据（读指针不等于写指针），就一直处理
-    while (uart_rx_fifo.tail != uart_rx_fifo.head) {
-        // 从环形缓冲区取出一个字节
-        uint8_t byte = uart_rx_fifo.buffer[uart_rx_fifo.tail];
-        uart_rx_fifo.tail = (uart_rx_fifo.tail + 1) % RING_BUF_SIZE;
+    // 1. 清除 IDLE 标志位
+    __HAL_UART_CLEAR_IDLEFLAG(&huart1);
 
-        switch (state) {
-            case STATE_IDLE:
-                if (byte == 0x55) { // 发现帧头
-                    temp_packet[0] = 0x55;
-                    data_cnt = 1;
-                    state = STATE_HEADER_OK;
-                }
-                break;
+    // 2. 开启 DMA 接收（使用普通的 DMA 接收函数，不带 Idle 字样）
+    HAL_UART_Receive_DMA(&huart1, g_rx_raw_buf, sizeof(g_rx_raw_buf));
 
-            case STATE_HEADER_OK:
-                temp_packet[data_cnt++] = byte;
+    // 3. 核心：手动开启串口控制寄存器里的 IDLE 中断
+    __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
 
-                if (data_cnt >= 11) { // 凑够一帧长度
-                    // 1. 检查帧尾
-                    if (temp_packet[10] == 0xBB) {
-                        // 2. 计算校验和
-                        uint8_t sum = 0;
-                        for (int i = 0; i < 9; i++) sum += temp_packet[i];
+    // 4. 依旧禁用半传输中断
+    __HAL_DMA_DISABLE_IT(huart1.hdmarx, DMA_IT_HT);
+}
 
-                        if (sum == temp_packet[9]) {
-                            // --- 校验完全通过！---
-                            Process_Valid_Frame(temp_packet); // 这里去解析 PID
-                        }
-                    }
-                    // 无论校验是否通过，处理完 11 字节后都回到空闲态找下一个头
-                    state = STATE_IDLE;
-                    data_cnt = 0;
-                }
-                break;
+/**
+ * @brief 串口流多帧解析函数
+ * @param raw_data 原始字节流缓冲区
+ * @param len      本次接收到的总长度 (g_actual_rx_len)
+ */
+void Protocol_Parse_Stream(uint8_t *raw_data, uint16_t len) {
+    ProtocolFrame_t temp_frame;
+    uint8_t calculated_sum;
+
+    // 1. 滑动窗口搜索
+    for (uint16_t i = 0; i <= (len - FRAME_SIZE); ) {
+
+        // 2. 匹配帧头 0x55 和 帧尾 0xBB
+        if (raw_data[i] == 0x55 && raw_data[i + FRAME_SIZE - 1] == 0xBB) {
+
+            // 拷贝到临时结构体进行校验
+            memcpy(&temp_frame, &raw_data[i], FRAME_SIZE);
+
+            // 计算前 9 字节校验和 (Head + ID + Len + Data[6])
+            calculated_sum = Protocol_Calculate_Checksum((uint8_t *)&temp_frame, 9);
+
+            if (calculated_sum == temp_frame.checksum) {
+                /* --- 校验通过：处理本帧业务 --- */
+                Protocol_Handle_Payload(&temp_frame);
+
+                /* --- 核心修改：跳过已处理的帧长 --- */
+                i += FRAME_SIZE;
+                continue; // 直接进入下一轮循环，不执行末尾的 i++
+            } else {
+                // 校验失败，可能是伪随机数据，i++ 继续寻找真正的帧头
+                i++;
+            }
+        } else {
+            // 头尾不匹配，i++ 继续寻找
+            i++;
         }
     }
 }
 
-void Process_Valid_Frame(uint8_t *packet) {
-    // packet[0] 是 0x55 (帧头)
-    // packet[1] 是 ID (0x08)
-    // packet[2] 是 Length (0x06)
+/**
+ * @brief 根据解析出的 ID 执行对应的小车动作
+ */
+void Protocol_Handle_Payload(ProtocolFrame_t *frame) {
+    switch (frame->id) {
+        case 0x01: // 运动控制指令
+            // 示例：将 data[0-3] 转换为 float 速度或直接处理
+            // Update_Motor_Setpoint(frame->data[0], frame->data[1]);
+            break;
 
-    uint8_t msg_id = packet[1];
+        case 0x02: // 传感器采样触发 (如开启管道缺陷检测相机)
+            // Trigger_Camera_Capture();
+            break;
 
-    if (msg_id == 0x08) { // 判断是否为 PID 调节指令
+        case 0x03: // 定位参数校准 (如 IMU 归零)
+            // IMU_Calibrate_Zero();
+            break;
 
-        // 1. 数据还原：将两个 uint8 拼接回 uint16，再除以 100 恢复成 float
-        // 使用位移操作：高字节左移 8 位 + 低字节
-        float new_kp = (float)((packet[3] << 8) | packet[4]) / 100.0f;
-        float new_ki = (float)((packet[5] << 8) | packet[6]) / 100.0f;
-        float new_kd = (float)((packet[7] << 8) | packet[8]) / 100.0f;
+        case 0x08: // PID 参数配置
+            Motor_Update_PID_From_Protocol(frame->data);
+            break;
 
-        // 2. 赋值给你的 PID 结构体（假设你有一个全局变量）
-        // 注意：这里可以加一个简单的数值保护，防止输入非法超大值
-        if (new_kp >= 0 && new_kp < 500.0f) {
-            MotorL_PID.Kp = new_kp;
-            MotorR_PID.Kp = new_kp;
-            MotorL_PID.Ki = new_ki;
-            MotorR_PID.Ki = new_ki;
-            MotorL_PID.Kd = new_kd;
-            MotorR_PID.Kd = new_kd;
-
-        }
+        default:
+            // 未知 ID 处理
+            break;
     }
-    // 如果以后有其他 ID（比如 0x01 控制电机启停），可以继续写 else if
 }
 
-
+//
 // void Process_Serial_Data(uint8_t *pData, uint16_t len) {
 //     // 遍历整个缓冲区，寻找 0x55
 //     // 注意：我们要找的是一帧的开头，所以遍历范围是 [0, len - FRAME_LEN]

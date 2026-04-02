@@ -197,18 +197,23 @@ void I2C1_ER_IRQHandler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
-  if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE)) { // 检测到空闲中断
-    __HAL_UART_CLEAR_IDLEFLAG(&huart1); // 清除标志位
+  /* 1. 检查是否触发了 IDLE (空闲) 中断 */
+  if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE) != RESET) {
 
-    // 1. 计算收到了多少个字节
-    // RX_BUF_SIZE - 剩余 DMA 计数器 = 已收到的数量
-    receive_len = 33 - __HAL_DMA_GET_COUNTER(huart1.hdmarx);
+    // 清除标志位，防止死循环进入中断
+    __HAL_UART_CLEAR_IDLEFLAG(&huart1);
 
-    // 2. 释放信号量通知 Task 处理
-    osSemaphoreRelease(Sem_RxCompleteHandle);
+    // 计算当前 DMA 已经搬运了多少字节
+    // RX_BUF_SIZE(22) - NDTR(剩余字节数) = 实际收到的字节数
+    uint16_t nb_data = 22 - __HAL_DMA_GET_COUNTER(huart1.hdmarx);
 
-    // 3. 注意：Circular 模式下不需要手动重启，它会自己绕回开头
+    /* 2. 手动调用 HAL 库的事件回调函数 */
+    // 这会让逻辑跳转到你写的 HAL_UARTEx_RxEventCallback
+    HAL_UARTEx_RxEventCallback(&huart1, nb_data);
   }
+
+  /* 3. 保留原有的 HAL 处理逻辑（处理其它的如错误中断等） */
+  HAL_UART_IRQHandler(&huart1);
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);
   /* USER CODE BEGIN USART1_IRQn 1 */

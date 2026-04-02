@@ -8,37 +8,41 @@
 #include "stm32f4xx_it.h"
 #include "usart.h"
 
-
-
 void StartSerialRxTask(void *argument) {
-    // 开启初始化的 DMA 接收
-    HAL_UART_Receive_IT(&huart1, &aRxByte, 1);
+    UART_Rx_Init(); // 内部开启 HAL_UARTEx_ReceiveToIdle_DMA
+    ProtocolFrame_t decoded_frame;
+    osSemaphoreRelease(Sem_RxCompleteHandle);
 
     for (;;) {
-        // 调用状态机解析
-        Serial_Parse_Task();
+        // 等待信号量唤醒（不消耗 CPU）
+        if (osSemaphoreAcquire(Sem_RxCompleteHandle, osWaitForever) == osOK) {
 
-        // 因为 F407 很快，10ms 的延时足够处理几百个字节了
-        osDelay(10);
+            // 一次性处理缓冲区内可能存在的所有帧
+            Protocol_Parse_Stream(g_rx_raw_buf, g_actual_rx_len);
+            Protocol_Handle_Payload(&decoded_frame);
+
+            // 处理完成后重置接收长度
+            g_actual_rx_len = 0;
+        }
     }
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
+/**
+ * @brief 串口事件回调函数 (由 IDLE 中断或 DMA 满中断触发)
+ * @param Size 当前缓冲区中有效数据的长度
+ */
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
     if (huart->Instance == USART1) {
-        // 1. 将收到的字节存入环形缓冲区
-        uint16_t next_head = (uart_rx_fifo.head + 1) % RING_BUF_SIZE;
+        g_actual_rx_len = Size;
 
-        // 检查缓冲区是否已满（防止覆盖未读数据）
-        if (next_head != uart_rx_fifo.tail) {
-            uart_rx_fifo.buffer[uart_rx_fifo.head] = aRxByte;
-            uart_rx_fifo.head = next_head;
-        }
+        // 释放信号量，唤醒 StartRxTask
+        osSemaphoreRelease(Sem_RxCompleteHandle);
 
-        // 2. 重新开启单字节中断接收
-        HAL_UART_Receive_IT(&huart1, &aRxByte, 1);
-
-        // 3. (可选) 释放信号量，通知任务有新数据可读
-        // osSemaphoreRelease(Sem_RxDataHandle);
+        /* 关键：因为我们用的是 HAL_UART_Receive_DMA，
+         * 每次 IDLE 触发后，建议重启 DMA 以重置计数器 (NDTR)
+         */
+        HAL_UART_AbortReceive(huart);
+        UART_Rx_Init();
     }
 }
 

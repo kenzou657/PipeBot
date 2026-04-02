@@ -9,16 +9,16 @@
 #include "Types/LEDType.h"
 #include "main.h"
 
-#define RING_BUF_SIZE 512
+#define FRAME_SIZE 11
 
-extern PID_Params_t MotorL_PID;
-extern PID_Params_t MotorR_PID;
-extern RingBuffer_t uart_rx_fifo;
-extern uint8_t aRxByte;
 
+extern uint8_t g_rx_raw_buf[FRAME_SIZE * 2];
+extern uint16_t g_actual_rx_len;
+
+void UART_Rx_Init(void);
 uint8_t Protocol_Calculate_Checksum(uint8_t *pData, uint16_t len);
-void Serial_Parse_Task(void);
-void Process_Valid_Frame(uint8_t *packet);
+void Protocol_Parse_Stream(uint8_t *raw_data, uint16_t len);
+void Protocol_Handle_Payload(ProtocolFrame_t *frame);
 // void Process_Serial_Data(uint8_t *pData, uint16_t len);
 
 #endif //PIPEBOT_BSP_USART_DMA_H

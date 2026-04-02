@@ -79,6 +79,9 @@ typedef struct {
 // 外部声明
 extern Motor_TypeDef MotorL, MotorR;
 
+extern PID_Params_t MotorL_PID;
+extern PID_Params_t MotorR_PID;
+
 void MotorL_Speed(int16_t speed);
 void MotorR_Speed(int16_t speed);
 void Move_Forward(int16_t speed);
@@ -90,5 +93,6 @@ void Motor_Read_Encoder(void);
 int16_t Speed_To_PWM(int16_t speed_mm_s);
 void Pack_Kinematics_To_Frame(ProtocolFrame_t *frame, int16_t v_l_mm, int16_t v_r_mm);
 float PID_Incremental_Compute(PID_Params_t *pid, float target, float measure);
+void Motor_Update_PID_From_Protocol(uint8_t *pData);
 
 #endif //PIPEBOT_BSP_MOTOR_H
