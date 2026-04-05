@@ -24,7 +24,7 @@ void StartIMUTask(void *argument) {
             if (status == osOK) {
                 // 3. 传输完成后，调用刚才封装的函数进行数据打包
                 JY61P_Decode(&imu_data, i2c_buf);
-                printf("%d,%d,%d\n", (int)imu_data.angle[0], (int)imu_data.angle[1], (int)imu_data.angle[2]);
+                // printf("%d,%d,%d\n", (int)imu_data.angle[0], (int)imu_data.angle[1], (int)imu_data.angle[2]);
 
                 // 【提示】在这里你可以添加定位算法代码，比如：
                 // Update_Odometer_Logic(&imu_data);

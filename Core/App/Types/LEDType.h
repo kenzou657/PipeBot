@@ -46,17 +46,6 @@ typedef struct {
     float output;       // PID 计算出的增量输出
 } PID_Params_t;
 
-typedef struct {
-    uint8_t buffer[128];
-    uint16_t head; // 写指针
-    uint16_t tail; // 读指针
-} RingBuffer_t;
-
-typedef enum {
-    STATE_IDLE = 0,    // 寻找帧头 0x55
-    STATE_HEADER_OK,   // 已找到头，等待接收后续数据
-} ParseState_t;
-
 /* 数据结构体，用于存放解析后的物理量 */
 typedef struct {
     float acc[3];   // 加速度
@@ -64,11 +53,5 @@ typedef struct {
     float angle[3]; // 角度
 } JY61P_Data_t;
 
-/* 数据结构 */
-typedef struct {
-    uint8_t  i2c_addr;
-    uint16_t distance_mm;
-    uint8_t  is_online;
-} TOF_Sensor_t;
 
 #endif //PIPEBOT_LEDTYPE_H

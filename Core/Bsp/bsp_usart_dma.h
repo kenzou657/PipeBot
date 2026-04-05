@@ -15,7 +15,7 @@
 extern uint8_t g_rx_raw_buf[FRAME_SIZE * 2];
 extern uint16_t g_actual_rx_len;
 
-void UART_Rx_Init(void);
+void UART_Device_Init(UART_HandleTypeDef *huart, uint8_t *pBuf, uint16_t size);
 uint8_t Protocol_Calculate_Checksum(uint8_t *pData, uint16_t len);
 void Protocol_Parse_Stream(uint8_t *raw_data, uint16_t len);
 void Protocol_Handle_Payload(ProtocolFrame_t *frame);

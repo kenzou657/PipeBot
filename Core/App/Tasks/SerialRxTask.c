@@ -2,6 +2,7 @@
 // Created by asus on 2026/3/19.
 //
 
+#include "bsp_tof050f.h"
 #include "bsp_usart_dma.h"
 #include "cmsis_os2.h"
 #include "stm32f4xx_hal_uart.h"
@@ -9,7 +10,7 @@
 #include "usart.h"
 
 void StartSerialRxTask(void *argument) {
-    UART_Rx_Init(); // 内部开启 HAL_UARTEx_ReceiveToIdle_DMA
+    UART_Device_Init(&huart1, g_rx_raw_buf, sizeof(g_rx_raw_buf)); // 内部开启 HAL_UARTEx_ReceiveToIdle_DMA
     ProtocolFrame_t decoded_frame;
     osSemaphoreRelease(Sem_RxCompleteHandle);
 
@@ -42,7 +43,31 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
          * 每次 IDLE 触发后，建议重启 DMA 以重置计数器 (NDTR)
          */
         HAL_UART_AbortReceive(huart);
-        UART_Rx_Init();
+        UART_Device_Init(&huart1, g_rx_raw_buf, sizeof(g_rx_raw_buf));
+    }
+    else if (huart->Instance == USART3) {
+        g_tofl_rx_len = Size;
+
+        // 释放信号量，唤醒 StartRxTask
+        osSemaphoreRelease(Sem_TOFLRxCompleteHandle);
+
+        /* 关键：因为我们用的是 HAL_UART_Receive_DMA，
+         * 每次 IDLE 触发后，建议重启 DMA 以重置计数器 (NDTR)
+         */
+        HAL_UART_AbortReceive(huart);
+        UART_Device_Init(&huart3, g_tofl_buf, sizeof(g_tofl_buf));
+    }
+    else if (huart->Instance == UART4) {
+        g_tofr_rx_len = Size;
+
+        // 释放信号量，唤醒 StartRxTask
+        osSemaphoreRelease(Sem_TOFRRxCompleteHandle);
+
+        /* 关键：因为我们用的是 HAL_UART_Receive_DMA，
+         * 每次 IDLE 触发后，建议重启 DMA 以重置计数器 (NDTR)
+         */
+        HAL_UART_AbortReceive(huart);
+        UART_Device_Init(&huart4, g_tofr_buf, sizeof(g_tofr_buf));
     }
 }
 

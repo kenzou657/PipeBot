@@ -30,20 +30,19 @@ uint8_t Protocol_Calculate_Checksum(uint8_t *pData, uint16_t len) {
     return sum;
 }
 
-void UART_Rx_Init(void) {
-    HAL_UART_AbortReceive(&huart1);
+// 传入串口句柄、缓冲区指针、缓冲区大小
+void UART_Device_Init(UART_HandleTypeDef *huart, uint8_t *pBuf, uint16_t size) {
+    HAL_UART_AbortReceive(huart);
+    __HAL_UART_CLEAR_IDLEFLAG(huart);
 
-    // 1. 清除 IDLE 标志位
-    __HAL_UART_CLEAR_IDLEFLAG(&huart1);
+    // 开启 DMA
+    HAL_UART_Receive_DMA(huart, pBuf, size);
 
-    // 2. 开启 DMA 接收（使用普通的 DMA 接收函数，不带 Idle 字样）
-    HAL_UART_Receive_DMA(&huart1, g_rx_raw_buf, sizeof(g_rx_raw_buf));
+    // 手动开启 IDLE 中断
+    __HAL_UART_ENABLE_IT(huart, UART_IT_IDLE);
 
-    // 3. 核心：手动开启串口控制寄存器里的 IDLE 中断
-    __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);
-
-    // 4. 依旧禁用半传输中断
-    __HAL_DMA_DISABLE_IT(huart1.hdmarx, DMA_IT_HT);
+    // 禁用半传输中断
+    __HAL_DMA_DISABLE_IT(huart->hdmarx, DMA_IT_HT);
 }
 
 /**

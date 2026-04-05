@@ -128,6 +128,16 @@ osSemaphoreId_t Sem_I2CHandle;
 const osSemaphoreAttr_t Sem_I2C_attributes = {
   .name = "Sem_I2C"
 };
+/* Definitions for Sem_TOFLRxComplete */
+osSemaphoreId_t Sem_TOFLRxCompleteHandle;
+const osSemaphoreAttr_t Sem_TOFLRxComplete_attributes = {
+  .name = "Sem_TOFLRxComplete"
+};
+/* Definitions for Sem_TOFRRxComplete */
+osSemaphoreId_t Sem_TOFRRxCompleteHandle;
+const osSemaphoreAttr_t Sem_TOFRRxComplete_attributes = {
+  .name = "Sem_TOFRRxComplete"
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -168,6 +178,12 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of Sem_I2C */
   Sem_I2CHandle = osSemaphoreNew(1, 1, &Sem_I2C_attributes);
+
+  /* creation of Sem_TOFLRxComplete */
+  Sem_TOFLRxCompleteHandle = osSemaphoreNew(1, 1, &Sem_TOFLRxComplete_attributes);
+
+  /* creation of Sem_TOFRRxComplete */
+  Sem_TOFRRxCompleteHandle = osSemaphoreNew(1, 1, &Sem_TOFRRxComplete_attributes);
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
   /* add semaphores, ... */
