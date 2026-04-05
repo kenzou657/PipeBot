@@ -7,38 +7,56 @@
 #include "cmsis_os2.h"
 #include "Types/LEDType.h"
 #include "bsp_tof050f.h"
+#include "bsp_usart_dma.h"
+#include "usart.h"
 
-
+uint16_t disL = 0, disR = 0;
 
 void StartTOFTask(void *argument) {
-    for(;;) {
-        // 3. 直接读取映射后的结果寄存器
-        uint16_t distL = TOF_ReadDistance(sensor_L.i2c_addr);
-        uint16_t distR = TOF_ReadDistance(sensor_R.i2c_addr);
+    UART_Device_Init(&huart3, g_tofl_buf, sizeof(g_tofl_buf)); // 内部开启 HAL_UARTEx_ReceiveToIdle_DMA
+    UART_Device_Init(&huart4, g_tofr_buf, sizeof(g_tofr_buf)); // 内部开启 HAL_UARTEx_ReceiveToIdle_DMA
 
-        // 4. 更新全局数据并进行简单的有效性判断
-        if (distL != 0xFFFF) {
-            sensor_L.distance_mm = distL;
-            sensor_L.is_online = 1;
-        } else {
-            sensor_L.is_online = 0; // 掉线处理
+    osSemaphoreRelease(Sem_TOFLRxCompleteHandle);
+    osSemaphoreRelease(Sem_TOFRRxCompleteHandle);
+
+    ProtocolFrame_t feedbackFrame;
+    feedbackFrame.head = 0x55;
+    feedbackFrame.id   = 0x06; // 测距传感器
+    feedbackFrame.len  = 0x06;
+    feedbackFrame.tail = 0xBB;
+
+    for (;;) {
+        // 等待信号量唤醒（不消耗 CPU）
+        if (osSemaphoreAcquire(Sem_TOFLRxCompleteHandle, osWaitForever) == osOK) {
+
+            // 一次性处理缓冲区内可能存在的所有帧
+            // 处理 USART3 的 TOF
+            if (TOF_Parse(g_tofl_buf, g_tofl_rx_len, TOF_LEFT_ADDR, &disL) == 0) {
+                feedbackFrame.data[0] = (uint8_t)(disL >> 8);
+                feedbackFrame.data[1] = (uint8_t)(disL & 0xFF);
+            }
+
+            // 处理完成后重置接收长度
+            g_tofl_rx_len = 0;
         }
 
-        if (distR != 0xFFFF) {
-            sensor_R.distance_mm = distR;
-            sensor_R.is_online = 1;
-        } else {
-            sensor_R.is_online = 0;
+        // 等待信号量唤醒（不消耗 CPU）
+        if (osSemaphoreAcquire(Sem_TOFRRxCompleteHandle, osWaitForever) == osOK) {
+
+            // 一次性处理缓冲区内可能存在的所有帧
+            // 处理 UART4 的 TOF
+            if (TOF_Parse(g_tofr_buf, g_tofr_rx_len, TOF_RIGHT_ADDR, &disR) == 0) {
+                feedbackFrame.data[2] = (uint8_t)(disR >> 8);
+                feedbackFrame.data[3] = (uint8_t)(disR & 0xFF);
+            }
+
+            // 处理完成后重置接收长度
+            g_tofr_rx_len = 0;
         }
 
-        /* 此处可插入弯道控制逻辑（方案二：八字布局）：
-           int error = sensor_L.distance_mm - sensor_R.distance_mm;
-           Apply_Differential_Drive(error);
-        */
+        feedbackFrame.data[4] = 0;
+        feedbackFrame.data[5] = 0;
 
-        printf("%d,%d\n", sensor_L.distance_mm, sensor_R.distance_mm);
-
-        // 5. 任务调度周期建议与传感器更新周期匹配
-        osDelay(100);
+        osMessageQueuePut(UART_TxQueueHandle, &feedbackFrame, 0, 0);
     }
 }

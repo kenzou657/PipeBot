@@ -8,19 +8,16 @@
 #include "stm32f4xx_hal.h"
 #include "Types/LEDType.h"
 
-/* 设备 8 位 I2C 地址  */
-#define TOF_ADDR_LEFT       0x52
-#define TOF_ADDR_RIGHT      0x54
+#define TOF_FRAME_SIZE 8
+#define TOF_LEFT_ADDR 0x02
+#define TOF_RIGHT_ADDR 0x03
 
-/* 厂家映射寄存器地址 */
-#define REG_RESET           0x0001  // 重启:写入 0x1000
-#define REG_DIST_VALUE      0x0010  // 测量结果: 2字节只读 (单位 mm)
+extern uint8_t g_tofl_buf[TOF_FRAME_SIZE * 2];
+extern uint16_t g_tofl_rx_len;
 
-/* 函数声明 */
-HAL_StatusTypeDef TOF_WriteMappedReg16(uint8_t dev_addr, uint16_t reg_addr, uint16_t value);
-uint16_t          TOF_ReadDistance(uint8_t dev_addr);
+extern uint8_t g_tofr_buf[TOF_FRAME_SIZE * 2];
+extern uint16_t g_tofr_rx_len;
 
-extern TOF_Sensor_t sensor_L;
-extern TOF_Sensor_t sensor_R;
+int8_t TOF_Parse(uint8_t *raw_buf, uint16_t len, uint8_t target_addr, uint16_t *out_dist);
 
 #endif //PIPEBOT_BSP_TOF050F_H

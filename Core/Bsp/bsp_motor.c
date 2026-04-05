@@ -10,6 +10,9 @@
 
 Motor_TypeDef MotorL, MotorR;
 
+PID_Params_t MotorL_PID = {4.1f, 0.15f, 0.0f};
+PID_Params_t MotorR_PID = {4.1f, 0.15f, 0.0f};
+
 // 计算比例因子：将脉冲增量直接转为 mm/s
 // 公式：(delta_ticks / 1320) * (PI * D) / 0.02
 const float TICKS_TO_MM_PER_SEC = TICKS_TO_METERS_PER_SEC * 1000.0f;
@@ -174,4 +177,34 @@ float PID_Incremental_Compute(PID_Params_t *pid, float target, float measure) {
     if (pid->output < -670.0f) pid->output = -670.0f;
 
     return pid->output;
+}
+
+/**
+ * @brief 从协议数据位更新 PID 参数
+ * @param pData 指向 ProtocolFrame_t 中的 data 数组起始地址 (即 frame->data)
+ */
+void Motor_Update_PID_From_Protocol(uint8_t *pData) {
+    /* * 协议定义：大端模式 (高位在前，低位在后)
+     * Data[0-1]: Kp, Data[2-3]: Ki, Data[4-5]: Kd
+     * 这里的 pData[0] 对应结构体中的 data[0]
+     */
+
+    // Kp 解析：data[0]是高8位，data[1]是低8位
+    uint16_t kp_raw = (uint16_t)((pData[0] << 8) | pData[1]);
+    MotorL_PID.Kp = (float)kp_raw / 100.0f;
+    MotorR_PID.Kp = (float)kp_raw / 100.0f;
+
+    // Ki 解析：data[2]是高8位，data[3]是低8位
+    uint16_t ki_raw = (uint16_t)((pData[2] << 8) | pData[3]);
+    MotorL_PID.Ki = (float)ki_raw / 100.0f;
+    MotorR_PID.Ki = (float)ki_raw / 100.0f;
+
+    // Kd 解析：data[4]是高8位，data[5]是低8位
+    uint16_t kd_raw = (uint16_t)((pData[4] << 8) | pData[5]);
+    MotorL_PID.Kd = (float)kd_raw / 100.0f;
+    MotorR_PID.Kd = (float)kd_raw / 100.0f;
+
+    /* * 顶级工程师提示：更新完 PID 后，如果是运行中调节，
+     * 建议在此处调用 PID_Init 或清空积分项，防止参数突变导致系统震荡。
+     */
 }

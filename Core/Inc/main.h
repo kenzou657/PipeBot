@@ -46,6 +46,8 @@ extern osMessageQueueId_t UART_TxQueueHandle;
 extern osSemaphoreId_t Sem_TxCompleteHandle;
 extern osSemaphoreId_t Sem_RxCompleteHandle;
 extern osSemaphoreId_t Sem_I2CHandle;
+extern osSemaphoreId_t Sem_TOFLRxCompleteHandle;
+extern osSemaphoreId_t Sem_TOFRRxCompleteHandle;
 /* USER CODE END EC */
 
 /* Exported macro ------------------------------------------------------------*/
