@@ -19,6 +19,12 @@ void StartTOFTask(void *argument) {
     osSemaphoreRelease(Sem_TOFLRxCompleteHandle);
     osSemaphoreRelease(Sem_TOFRRxCompleteHandle);
 
+    ProtocolFrame_t feedbackFrame;
+    feedbackFrame.head = 0x55;
+    feedbackFrame.id   = 0x06; // 测距传感器
+    feedbackFrame.len  = 0x06;
+    feedbackFrame.tail = 0xBB;
+
     for (;;) {
         // 等待信号量唤醒（不消耗 CPU）
         if (osSemaphoreAcquire(Sem_TOFLRxCompleteHandle, osWaitForever) == osOK) {
@@ -26,7 +32,8 @@ void StartTOFTask(void *argument) {
             // 一次性处理缓冲区内可能存在的所有帧
             // 处理 USART3 的 TOF
             if (TOF_Parse(g_tofl_buf, g_tofl_rx_len, TOF_LEFT_ADDR, &disL) == 0) {
-
+                feedbackFrame.data[0] = (uint8_t)(disL >> 8);
+                feedbackFrame.data[1] = (uint8_t)(disL & 0xFF);
             }
 
             // 处理完成后重置接收长度
@@ -39,11 +46,17 @@ void StartTOFTask(void *argument) {
             // 一次性处理缓冲区内可能存在的所有帧
             // 处理 UART4 的 TOF
             if (TOF_Parse(g_tofr_buf, g_tofr_rx_len, TOF_RIGHT_ADDR, &disR) == 0) {
-
+                feedbackFrame.data[2] = (uint8_t)(disR >> 8);
+                feedbackFrame.data[3] = (uint8_t)(disR & 0xFF);
             }
 
             // 处理完成后重置接收长度
             g_tofr_rx_len = 0;
         }
+
+        feedbackFrame.data[4] = 0;
+        feedbackFrame.data[5] = 0;
+
+        osMessageQueuePut(UART_TxQueueHandle, &feedbackFrame, 0, 0);
     }
 }

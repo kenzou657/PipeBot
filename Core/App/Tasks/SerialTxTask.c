@@ -24,7 +24,7 @@ void StartSerialTxTask(void *argument) {
             txFrame.checksum = Protocol_Calculate_Checksum((uint8_t*)&txFrame, 9);
 
             // 4. 执行发送 (注意：只发送协议要求的11字节，忽略最后的reserved)
-            // HAL_UART_Transmit_DMA(&huart1, (uint8_t*)&txFrame, 11);
+            HAL_UART_Transmit_DMA(&huart1, (uint8_t*)&txFrame, 11);
         }
     }
 }
