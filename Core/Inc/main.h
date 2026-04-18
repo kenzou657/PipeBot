@@ -63,6 +63,18 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define ServoA_Pin GPIO_PIN_5
+#define ServoA_GPIO_Port GPIOE
+#define ServoB_Pin GPIO_PIN_6
+#define ServoB_GPIO_Port GPIOE
+#define CIN1_Pin GPIO_PIN_0
+#define CIN1_GPIO_Port GPIOC
+#define CIN2_Pin GPIO_PIN_1
+#define CIN2_GPIO_Port GPIOC
+#define DIN1_Pin GPIO_PIN_2
+#define DIN1_GPIO_Port GPIOC
+#define DIN2_Pin GPIO_PIN_3
+#define DIN2_GPIO_Port GPIOC
 #define KEY_Pin GPIO_PIN_0
 #define KEY_GPIO_Port GPIOA
 #define AIN1_Pin GPIO_PIN_1
@@ -85,16 +97,32 @@ void Error_Handler(void);
 #define BLUE_LED_GPIO_Port GPIOB
 #define PWMA_Pin GPIO_PIN_9
 #define PWMA_GPIO_Port GPIOE
+#define PWMC_Pin GPIO_PIN_11
+#define PWMC_GPIO_Port GPIOE
+#define PWMD_Pin GPIO_PIN_13
+#define PWMD_GPIO_Port GPIOE
 #define PWMB_Pin GPIO_PIN_14
 #define PWMB_GPIO_Port GPIOE
-#define TOF_SCL_Pin GPIO_PIN_10
-#define TOF_SCL_GPIO_Port GPIOB
-#define TOF_SDA_Pin GPIO_PIN_11
-#define TOF_SDA_GPIO_Port GPIOB
+#define OLED_SCL_Pin GPIO_PIN_10
+#define OLED_SCL_GPIO_Port GPIOB
+#define OLED_SDA_Pin GPIO_PIN_11
+#define OLED_SDA_GPIO_Port GPIOB
+#define ServoC_Pin GPIO_PIN_14
+#define ServoC_GPIO_Port GPIOB
+#define ServoD_Pin GPIO_PIN_15
+#define ServoD_GPIO_Port GPIOB
 #define E2A_Pin GPIO_PIN_12
 #define E2A_GPIO_Port GPIOD
 #define E2B_Pin GPIO_PIN_13
 #define E2B_GPIO_Port GPIOD
+#define E4A_Pin GPIO_PIN_6
+#define E4A_GPIO_Port GPIOC
+#define E4B_Pin GPIO_PIN_7
+#define E4B_GPIO_Port GPIOC
+#define E3A_Pin GPIO_PIN_15
+#define E3A_GPIO_Port GPIOA
+#define E3B_Pin GPIO_PIN_3
+#define E3B_GPIO_Port GPIOB
 #define JY61P_SCL_Pin GPIO_PIN_6
 #define JY61P_SCL_GPIO_Port GPIOB
 #define JY61P_SDA_Pin GPIO_PIN_7
